@@ -1,7 +1,33 @@
+// settings 
+
+byte latchPin = 4;
+byte enablePin = 5;
+byte mosiPin = 13;
+byte sckPin = 14;
+
+const char* ssid     = "ssid";
+const char* password = "pass";
+
+// uncomment if using ESP_01
+// this disables Serial connection
+// remember to connect digital pins AFTER POWERING ESP!
+// otherwise it will not boot
+#define ESP_01
+
+// ESP 01 pinout:
+/*
+ * |----------------------------------------|
+ * | D1 (TX)      GND                       |
+ * |  CH_PD       D2                        |
+ * |   RS         D0                        |
+ * |   VCC      D3 (RX)                     |
+ * |----------------------------------------|
+ */
+
+// -------------------------
 #include "SPI.h"
-
-
 #include "font-5x7.h"
+#include "SoftwareSPI.h"
 
 
 #include <ESP8266WiFiMulti.h>
@@ -78,14 +104,7 @@ int eu_dst(const time_t * timer) {
                     return 0;
 
 }
-
-#include "SoftwareSPI.h"
-SoftSPI SSPI(13, 14);
-
-//#define SSPI SPI
-
-const char* ssid     = "ssid";
-const char* password = "pass";
+SoftSPI SSPI(mosiPin, sckPin);
 
 unsigned int localPort = 2390;      // local port to listen for UDP packets
 
@@ -95,14 +114,10 @@ IPAddress timeServerIP;
 
 const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
 
-byte packetBuffer[ NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
+byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
 
 // A UDP instance to let us send and receive packets over UDP
 WiFiUDP UDP;
-
-byte latchPin = 4;
-byte enablePin = 5;
-// SPI MOSI + SCK for data shift
 
 constexpr uint8_t COLUMNS = 28;
 constexpr uint8_t ROWS = 7;
@@ -222,28 +237,12 @@ void startUDP() {
   Serial.println();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void setup() {
-
+#ifndef ESP_01
   Serial.begin(115200);
+#else
+  Serial.end();
+#endif
 
   Serial.println("uruchomiono kaktus...");
   
@@ -417,22 +416,8 @@ unsigned long prevActualTime = 0;
 
 
 
-/*
-void loop() {
-
-  Serial.println("dupadupa");
-  char text[] = "HSKRK";
-
-  for(int ch = 0; ch < strlen(text); ++ch) {
-    print_char(text[ch], 6*ch);
-  }
-}
-*/
 void loop()
 {
-//  print_string(text, 0);
-//print_hour(21, 37);
-
   unsigned long currentMillis = millis();
 
     if (currentMillis - prevNTP > intervalNTP) { // If a minute has passed since last NTP request
