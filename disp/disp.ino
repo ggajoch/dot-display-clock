@@ -1,12 +1,6 @@
-#include "SPI.h"
-#include "font-5x7.h"
-
-#include <ESP8266WiFiMulti.h>
-#include <ESP8266WiFi.h>
-#include <WiFiUdp.h>
-
-#include <time.h>
-#include <inttypes.h>
+// ------------------------------------------
+// ----------------- CONFIG -----------------
+// ------------------------------------------
 
 const char* ssid     = "ssid";
 const char* password = "pass";
@@ -16,6 +10,21 @@ byte enablePin = 16;
 byte mosiPin = 0;
 byte sckPin = 4;
 // SPI MOSI + SCK for data shift
+
+// ------------------------------------------
+// ------------------------------------------
+// ------------------------------------------
+
+#include <time.h>
+#include <inttypes.h>
+
+#include <ESP8266WiFiMulti.h>
+#include <ESP8266WiFi.h>
+#include <WiFiUdp.h>
+
+#include "SPI.h"
+#include "font-5x7.h"
+#include "SoftwareSPI.h"
 
 #if not __AVR__
 
@@ -85,19 +94,12 @@ int eu_dst(const time_t * timer) {
 
 }
 
-#include "SoftwareSPI.h"
 SoftSPI SSPI(mosiPin, sckPin);
 
-//#define SSPI SPI
-
 unsigned int localPort = 2390;      // local port to listen for UDP packets
-
-
 IPAddress timeServerIP;
 
-
 const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
-
 byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
 
 // A UDP instance to let us send and receive packets over UDP
@@ -157,24 +159,8 @@ uint8_t rows_clear_to_address[ROWS] = {
   0b10001
 };
 
-
-
-
-
-
-
 const char* NTPServerName = "pool.ntp.org";
-
-//const int NTP_PACKET_SIZE = 48;  // NTP time stamp is in the first 48 bytes of the message
-
 byte NTPBuffer[NTP_PACKET_SIZE]; // buffer to hold incoming and outgoing packets
-
-
-
-
-
-
-
 
 uint32_t getTime() {
   if (UDP.parsePacket() == 0) { // If there's no response (yet)
