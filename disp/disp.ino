@@ -1,33 +1,7 @@
-// settings 
-
-byte latchPin = 4;
-byte enablePin = 5;
-byte mosiPin = 13;
-byte sckPin = 14;
-
-const char* ssid     = "ssid";
-const char* password = "pass";
-
-// uncomment if using ESP_01
-// this disables Serial connection
-// remember to connect digital pins AFTER POWERING ESP!
-// otherwise it will not boot
-#define ESP_01
-
-// ESP 01 pinout:
-/*
- * |----------------------------------------|
- * | D1 (TX)      GND                       |
- * |  CH_PD       D2                        |
- * |   RS         D0                        |
- * |   VCC      D3 (RX)                     |
- * |----------------------------------------|
- */
-
-// -------------------------
 #include "SPI.h"
+
+
 #include "font-5x7.h"
-#include "SoftwareSPI.h"
 
 
 #include <ESP8266WiFiMulti.h>
@@ -39,18 +13,18 @@ const char* password = "pass";
 
 #if not __AVR__
 
-enum  	_MONTHS_ { 
+enum    _MONTHS_ { 
   JANUARY, FEBRUARY, MARCH, APRIL, 
   MAY, JUNE, JULY, AUGUST, 
   SEPTEMBER, OCTOBER, NOVEMBER, DECEMBER 
 };
 
-enum  	_WEEK_DAYS_ { 
+enum    _WEEK_DAYS_ { 
   SUNDAY, MONDAY, TUESDAY, WEDNESDAY, 
   THURSDAY, FRIDAY, SATURDAY 
 };
 
-#define 	ONE_HOUR   3600
+#define   ONE_HOUR   3600
 
 #endif 
 
@@ -104,7 +78,14 @@ int eu_dst(const time_t * timer) {
                     return 0;
 
 }
-SoftSPI SSPI(mosiPin, sckPin);
+
+#include "SoftwareSPI.h"
+SoftSPI SSPI(0, 4);
+
+//#define SSPI SPI
+
+const char* ssid     = "ssid";
+const char* password = "pass";
 
 unsigned int localPort = 2390;      // local port to listen for UDP packets
 
@@ -118,6 +99,10 @@ byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packe
 
 // A UDP instance to let us send and receive packets over UDP
 WiFiUDP UDP;
+
+byte latchPin = 5;
+byte enablePin = 16;
+// SPI MOSI + SCK for data shift
 
 constexpr uint8_t COLUMNS = 28;
 constexpr uint8_t ROWS = 7;
@@ -238,11 +223,8 @@ void startUDP() {
 }
 
 void setup() {
-#ifndef ESP_01
+
   Serial.begin(115200);
-#else
-  Serial.end();
-#endif
 
   Serial.println("uruchomiono kaktus...");
   
@@ -258,7 +240,6 @@ void setup() {
   Serial.println("WiFi polaczono kaktus");
   Serial.print("IP : ");
   Serial.println(WiFi.localIP());
-
 
 
   startUDP();
@@ -415,15 +396,17 @@ uint32_t timeUNIX = 0;
 unsigned long prevActualTime = 0;
 
 
+byte initialized = 0;
 
 void loop()
 {
-  unsigned long currentMillis = millis();
+    unsigned long currentMillis = millis();
 
-    if (currentMillis - prevNTP > intervalNTP) { // If a minute has passed since last NTP request
+    if (currentMillis - prevNTP > intervalNTP || initialized == 0) { // If a minute has passed since last NTP request
       prevNTP = currentMillis;
       Serial.println("\r\nSending NTP request ...");
       sendNTPpacket(timeServerIP);               // Send an NTP request
+      initialized = 1;
     }
 
     uint32_t time = getTime();                   // Check if an NTP response has arrived and get the (UNIX) time
@@ -442,7 +425,7 @@ void loop()
     uint32_t actualTime = timeUNIX + (currentMillis - lastNTPResponse)/1000;
     if (actualTime != prevActualTime && timeUNIX != 0) { // If a second has passed since last print
       prevActualTime = actualTime;
-      Serial.printf("\rUTC time:\t%d:%d:%d   ", getHours(actualTime), getMinutes(actualTime), getSeconds(actualTime));
+      Serial.printf("\rUTC time:\t%02d:%02d:%02d   \r\n", getHours(actualTime), getMinutes(actualTime), getSeconds(actualTime));
       print_unix_timestamp_utc(actualTime);
     }
 
