@@ -1,8 +1,5 @@
 #include "SPI.h"
-
-
 #include "font-5x7.h"
-
 
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266WiFi.h>
@@ -10,6 +7,15 @@
 
 #include <time.h>
 #include <inttypes.h>
+
+const char* ssid     = "ssid";
+const char* password = "pass";
+
+byte latchPin = 5;
+byte enablePin = 16;
+byte mosiPin = 0;
+byte sckPin = 4;
+// SPI MOSI + SCK for data shift
 
 #if not __AVR__
 
@@ -80,12 +86,9 @@ int eu_dst(const time_t * timer) {
 }
 
 #include "SoftwareSPI.h"
-SoftSPI SSPI(0, 4);
+SoftSPI SSPI(mosiPin, sckPin);
 
 //#define SSPI SPI
-
-const char* ssid     = "ssid";
-const char* password = "pass";
 
 unsigned int localPort = 2390;      // local port to listen for UDP packets
 
@@ -99,10 +102,6 @@ byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packe
 
 // A UDP instance to let us send and receive packets over UDP
 WiFiUDP UDP;
-
-byte latchPin = 5;
-byte enablePin = 16;
-// SPI MOSI + SCK for data shift
 
 constexpr uint8_t COLUMNS = 28;
 constexpr uint8_t ROWS = 7;
