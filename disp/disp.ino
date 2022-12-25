@@ -1,3 +1,4 @@
+// support for full array taken from: https://github.com/doworek/Flip-Dot-Display-Tetris
 #include "SPI.h"
 #include "font-5x7.h"
 
@@ -8,8 +9,11 @@
 #include <time.h>
 #include <inttypes.h>
 
-const char* ssid     = "ssid";
-const char* password = "pass";
+// use wifi_secret_template.h to create your wifi_secret.h file
+#include "wifi_secret.h"
+
+const char* ssid     = WIFI_NAME;
+const char* password = WIFI_PSK;
 
 byte latchPin = 5;
 byte enablePin = 16;
@@ -104,7 +108,7 @@ byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packe
 WiFiUDP UDP;
 
 constexpr uint8_t COLUMNS = 28;
-constexpr uint8_t ROWS = 7;
+constexpr uint8_t ROWS = 9;
 
 uint8_t columns_to_address[COLUMNS] = {
   0b01100,
@@ -138,23 +142,27 @@ uint8_t columns_to_address[COLUMNS] = {
 };
 
 uint8_t rows_set_to_address[ROWS] = {
-  0b01111,
-  0b01110,
-  0b01101,
-  0b01100,
-  0b01011,
-  0b01010,
-  0b01001
+  134,
+  144,
+  145,
+  146,
+  147,
+  148,
+  149,
+  150,
+  130,
 };
 
 uint8_t rows_clear_to_address[ROWS] = {
-  0b10111,
-  0b10110,
-  0b10101,
-  0b10100,
-  0b10011,
-  0b10010,
-  0b10001
+  69,
+  72,
+  73,
+  74,
+  75,
+  76,
+  77,
+  78,
+  65,
 };
 
 
@@ -224,7 +232,7 @@ void startUDP() {
 void setup() {
 
   Serial.begin(115200);
-
+  Serial.println();
   Serial.println("uruchomiono kaktus...");
   
   WiFi.mode(WIFI_STA);
@@ -281,7 +289,7 @@ void setup() {
 }
 
 void send_bytes(uint8_t byteRows, uint8_t byteColumns) {
-  byteRows = ~byteRows;
+  //byteRows = ~byteRows;
   byteColumns = ~byteColumns;
 
   //SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE3));
@@ -301,14 +309,14 @@ void send_bytes(uint8_t byteRows, uint8_t byteColumns) {
 }
 
 void clear_pixel(int row, int column) {
-  uint8_t byte_row = (0 << 6) + rows_clear_to_address[row];
+  uint8_t byte_row = rows_clear_to_address[row];
   uint8_t byte_column = (1 << 6) + columns_to_address[column];
 
   send_bytes(byte_row, byte_column);
 }
 
 void set_pixel(int row, int column) {
-  uint8_t byte_row = (1 << 6) + rows_set_to_address[row];
+  uint8_t byte_row = rows_set_to_address[row];
   uint8_t byte_column = (0 << 6) + columns_to_address[column];
 
   send_bytes(byte_row, byte_column);
@@ -326,11 +334,11 @@ void write_pixel(int row, int column, bool value) {
 }
 
 void print_char(char character, int start_column) {
-  for(int r = 0; r < ROWS; ++r) {
+  for(int r = 1; r < ROWS; ++r) {
       for(int c = 0; c < 5; ++c) {
         int offset = 5*(character - ' ');
 
-        write_pixel(r, start_column + c, Font5x7[offset+c] & (1 << r));
+        write_pixel(r, start_column + c, Font5x7[offset+c] & (1 << r - 1));
       }
       write_pixel(r, start_column + 5, 0);
     }
@@ -338,11 +346,11 @@ void print_char(char character, int start_column) {
 
 
 void print_char_4_column(char character, int start_column) {
-  for(int r = 0; r < ROWS; ++r) {
+  for(int r = 1; r < ROWS; ++r) {
       for(int c = 0; c < 4; ++c) {
         int offset = 5*(character - ' ');
 
-        write_pixel(r, start_column + c, Font5x7[offset+c] & (1 << r));
+        write_pixel(r, start_column + c, Font5x7[offset+c] & (1 << r - 1));
       }
       write_pixel(r, start_column + 4, 0);
     }
